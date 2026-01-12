@@ -5,9 +5,11 @@ interface GameCanvasProps {
   onGameOver: (score: number) => void;
   onScoreUpdate: (score: number) => void;
   isMuted: boolean;
+  bgmVolume: number;
+  sfxVolume: number;
 }
 
-export function GameCanvas({ isPlaying, onGameOver, onScoreUpdate, isMuted }: GameCanvasProps) {
+export function GameCanvas({ isPlaying, onGameOver, onScoreUpdate, isMuted, bgmVolume, sfxVolume }: GameCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const requestRef = useRef<number>();
   const scoreRef = useRef(0);
@@ -16,32 +18,34 @@ export function GameCanvas({ isPlaying, onGameOver, onScoreUpdate, isMuted }: Ga
   const bgmSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const bgmGainRef = useRef<GainNode | null>(null);
 
-  // Sound Assets (using public URLs for demonstration, replace with local assets if available)
+  // Sound Assets (Cozy & Cute)
   const SOUND_URLS = {
     jump: "https://actions.google.com/sounds/v1/cartoon/pop.ogg",
-    hit: "https://actions.google.com/sounds/v1/impacts/crash_metal.ogg",
+    doubleJump: "https://actions.google.com/sounds/v1/cartoon/muffled_pop.ogg",
+    hit: "https://actions.google.com/sounds/v1/foley/light_thump.ogg",
     click: "https://actions.google.com/sounds/v1/ui/button_click.ogg",
-    bgm: "https://actions.google.com/sounds/v1/science_fiction/deep_space_atmosphere.ogg"
+    bgm: "https://actions.google.com/sounds/v1/science_fiction/deep_space_atmosphere.ogg",
+    sparkle: "https://actions.google.com/sounds/v1/cartoon/clink_clank.ogg"
   };
 
   // Game constants
-  const GRAVITY = 0.6;
-  const JUMP_FORCE = -12;
-  const BASE_SPEED_RATE = 0.5;
-  const MAX_SPEED_RATE = 5.0;
-  const SPEED_STEP = 0.5;
-  const TIME_STEP = 10; // seconds
+  const GRAVITY = 0.55;
+  const JUMP_FORCE = -11;
+  const BASE_SPEED_RATE = 0.4;
+  const MAX_SPEED_RATE = 4.0;
+  const SPEED_STEP = 0.4;
+  const TIME_STEP = 15; // Slower ramp
 
-  const STARTING_SPAWN_INTERVAL = 1500; // ms
-  const MIN_SPAWN_INTERVAL = 650; // ms
-  const SPAWN_REDUCTION = 100; // ms per 10s
+  const STARTING_SPAWN_INTERVAL = 1800; 
+  const MIN_SPAWN_INTERVAL = 800; 
+  const SPAWN_REDUCTION = 150; 
 
   const gameState = useRef({
     player: {
-      x: 50,
+      x: 80,
       y: 0,
-      width: 30,
-      height: 30,
+      width: 32,
+      height: 32,
       dy: 0,
       grounded: true,
       jumpCount: 0
@@ -55,12 +59,12 @@ export function GameCanvas({ isPlaying, onGameOver, onScoreUpdate, isMuted }: Ga
     spawnInterval: STARTING_SPAWN_INTERVAL,
   });
 
-  const playSound = (name: string, volume = 0.5) => {
+  const playSound = (name: string, volumeScale = 1) => {
     if (isMuted || !audioContextRef.current || !audioBuffersRef.current[name]) return;
     const source = audioContextRef.current.createBufferSource();
     source.buffer = audioBuffersRef.current[name];
     const gain = audioContextRef.current.createGain();
-    gain.gain.value = volume;
+    gain.gain.value = sfxVolume * volumeScale;
     source.connect(gain);
     gain.connect(audioContextRef.current.destination);
     source.start(0);
@@ -74,7 +78,7 @@ export function GameCanvas({ isPlaying, onGameOver, onScoreUpdate, isMuted }: Ga
       state.player.dy = JUMP_FORCE;
       state.player.grounded = false;
       state.player.jumpCount++;
-      playSound("jump", 0.3);
+      playSound(state.player.jumpCount === 1 ? "jump" : "doubleJump", 0.4);
     }
   };
 
@@ -105,9 +109,9 @@ export function GameCanvas({ isPlaying, onGameOver, onScoreUpdate, isMuted }: Ga
 
   useEffect(() => {
     if (bgmGainRef.current && audioContextRef.current) {
-      bgmGainRef.current.gain.setTargetAtTime(isMuted ? 0 : 0.25, audioContextRef.current.currentTime, 0.1);
+      bgmGainRef.current.gain.setTargetAtTime(isMuted ? 0 : bgmVolume, audioContextRef.current.currentTime, 0.5);
     }
-  }, [isMuted]);
+  }, [isMuted, bgmVolume]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -118,7 +122,6 @@ export function GameCanvas({ isPlaying, onGameOver, onScoreUpdate, isMuted }: Ga
     };
     
     const handleTouch = (e: TouchEvent) => {
-      // Don't prevent default here as it might block UI clicks
       if (gameState.current.active) {
         e.preventDefault();
         jump();
@@ -148,23 +151,24 @@ export function GameCanvas({ isPlaying, onGameOver, onScoreUpdate, isMuted }: Ga
     if (isPlaying) {
       const canvas = canvasRef.current;
       if (!canvas) return;
-      playSound("click", 0.4);
+      playSound("click", 0.5);
 
       if (audioContextRef.current?.state === "suspended") {
         audioContextRef.current.resume();
       }
 
-      // Start BGM
+      // Start BGM with fade
       if (audioBuffersRef.current.bgm && audioContextRef.current) {
         if (bgmSourceRef.current) bgmSourceRef.current.stop();
         bgmSourceRef.current = audioContextRef.current.createBufferSource();
         bgmSourceRef.current.buffer = audioBuffersRef.current.bgm;
         bgmSourceRef.current.loop = true;
         bgmGainRef.current = audioContextRef.current.createGain();
-        bgmGainRef.current.gain.value = isMuted ? 0 : 0.25;
+        bgmGainRef.current.gain.value = 0;
         bgmSourceRef.current.connect(bgmGainRef.current);
         bgmGainRef.current.connect(audioContextRef.current.destination);
         bgmSourceRef.current.start(0);
+        bgmGainRef.current.gain.setTargetAtTime(isMuted ? 0 : bgmVolume, audioContextRef.current.currentTime, 0.8);
       }
 
       scoreRef.current = 0;
@@ -172,10 +176,10 @@ export function GameCanvas({ isPlaying, onGameOver, onScoreUpdate, isMuted }: Ga
       
       gameState.current = {
         player: {
-          x: 50,
-          y: canvas.height - 50 - 30,
-          width: 30,
-          height: 30,
+          x: 80,
+          y: canvas.height - 60 - 32,
+          width: 32,
+          height: 32,
           dy: 0,
           grounded: true,
           jumpCount: 0
@@ -184,7 +188,7 @@ export function GameCanvas({ isPlaying, onGameOver, onScoreUpdate, isMuted }: Ga
         lastSpawnTime: Date.now(),
         startTime: Date.now(),
         active: true,
-        groundY: canvas.height - 50,
+        groundY: canvas.height - 60,
         speedRate: BASE_SPEED_RATE,
         spawnInterval: STARTING_SPAWN_INTERVAL,
       };
@@ -192,9 +196,14 @@ export function GameCanvas({ isPlaying, onGameOver, onScoreUpdate, isMuted }: Ga
       requestRef.current = requestAnimationFrame(gameLoop);
     } else {
       gameState.current.active = false;
-      if (bgmSourceRef.current) {
-        bgmSourceRef.current.stop();
-        bgmSourceRef.current = null;
+      if (bgmGainRef.current && audioContextRef.current) {
+        bgmGainRef.current.gain.setTargetAtTime(0, audioContextRef.current.currentTime, 0.6);
+        setTimeout(() => {
+          if (bgmSourceRef.current) {
+            bgmSourceRef.current.stop();
+            bgmSourceRef.current = null;
+          }
+        }, 600);
       }
       if (requestRef.current) cancelAnimationFrame(requestRef.current);
     }
@@ -214,12 +223,11 @@ export function GameCanvas({ isPlaying, onGameOver, onScoreUpdate, isMuted }: Ga
     const now = Date.now();
     const elapsedSeconds = (now - state.startTime) / 1000;
 
-    // Goal 1: Discrete Speed/Spawn Schedule
     const step = Math.floor(elapsedSeconds / TIME_STEP);
     state.speedRate = Math.min(BASE_SPEED_RATE + SPEED_STEP * step, MAX_SPEED_RATE);
     state.spawnInterval = Math.max(MIN_SPAWN_INTERVAL, STARTING_SPAWN_INTERVAL - SPAWN_REDUCTION * step);
 
-    const currentSpeed = 5 * state.speedRate;
+    const currentSpeed = 6 * state.speedRate;
 
     // Player Physics
     state.player.dy += GRAVITY;
@@ -235,11 +243,11 @@ export function GameCanvas({ isPlaying, onGameOver, onScoreUpdate, isMuted }: Ga
     // Spawn Obstacles
     if (now - state.lastSpawnTime >= state.spawnInterval) {
       state.lastSpawnTime = now;
-      const height = Math.floor(Math.random() * 80 + 40);
+      const height = Math.floor(Math.random() * 60 + 40);
       state.obstacles.push({
         x: canvas.width,
         y: state.groundY - height,
-        width: 30,
+        width: 32,
         height: height,
         passed: false
       });
@@ -251,13 +259,13 @@ export function GameCanvas({ isPlaying, onGameOver, onScoreUpdate, isMuted }: Ga
       obs.x -= currentSpeed;
 
       if (
-        state.player.x < obs.x + obs.width &&
-        state.player.x + state.player.width > obs.x &&
-        state.player.y < obs.y + obs.height &&
-        state.player.y + state.player.height > obs.y
+        state.player.x + 4 < obs.x + obs.width &&
+        state.player.x + state.player.width - 4 > obs.x &&
+        state.player.y + 4 < obs.y + obs.height &&
+        state.player.y + state.player.height - 4 > obs.y
       ) {
         state.active = false;
-        playSound("hit", 0.5);
+        playSound("hit", 0.6);
         onGameOver(scoreRef.current);
         return;
       }
@@ -266,49 +274,64 @@ export function GameCanvas({ isPlaying, onGameOver, onScoreUpdate, isMuted }: Ga
         obs.passed = true;
         scoreRef.current += 10;
         onScoreUpdate(scoreRef.current);
+        if (scoreRef.current % 50 === 0) playSound("sparkle", 0.3);
       }
 
-      if (obs.x + obs.width < 0) {
+      if (obs.x + obs.width < -50) {
         state.obstacles.splice(i, 1);
       }
     }
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Cozy Background
     const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    gradient.addColorStop(0, "#2a1b3d");
-    gradient.addColorStop(1, "#44318d");
+    gradient.addColorStop(0, "#0a0a0a");
+    gradient.addColorStop(1, "#1a1a2e");
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
+    // Soft Grid lines
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.03)";
     ctx.lineWidth = 1;
-    const gridOffset = (elapsedSeconds * currentSpeed * 10) % 40;
-    for (let x = 0; x < canvas.width + 40; x += 40) {
+    const gridOffset = (elapsedSeconds * currentSpeed * 8) % 60;
+    for (let x = 0; x < canvas.width + 60; x += 60) {
       ctx.beginPath();
       ctx.moveTo(x - gridOffset, 0);
       ctx.lineTo(x - gridOffset, canvas.height);
       ctx.stroke();
     }
 
-    ctx.fillStyle = "#1a1a2e";
+    // Ground
+    ctx.fillStyle = "#0f0f1b";
     ctx.fillRect(0, state.groundY, canvas.width, canvas.height - state.groundY);
-    ctx.fillStyle = "#e94560";
+    const groundGrad = ctx.createLinearGradient(0, state.groundY, 0, state.groundY + 4);
+    groundGrad.addColorStop(0, "#e94560");
+    groundGrad.addColorStop(1, "transparent");
+    ctx.fillStyle = groundGrad;
     ctx.fillRect(0, state.groundY, canvas.width, 4);
 
-    ctx.fillStyle = "#0f3460";
-    ctx.fillRect(state.player.x, state.player.y, state.player.width, state.player.height);
-    ctx.fillStyle = "#4CC9F0";
-    ctx.fillRect(state.player.x + 4, state.player.y + 4, state.player.width - 8, state.player.height - 8);
-    ctx.fillStyle = "#fff";
-    ctx.fillRect(state.player.x + 6, state.player.y + 6, 4, 4);
+    // Player (Cute Rounded Square)
+    const p = state.player;
+    ctx.fillStyle = "#e94560";
+    ctx.beginPath();
+    ctx.roundRect(p.x, p.y, p.width, p.height, 8);
+    ctx.fill();
+    
+    ctx.fillStyle = "rgba(255, 255, 255, 0.2)";
+    ctx.beginPath();
+    ctx.roundRect(p.x + 4, p.y + 4, p.width - 8, p.height - 8, 4);
+    ctx.fill();
 
+    // Obstacles (Soft glowing rectangles)
     state.obstacles.forEach(obs => {
-      ctx.fillStyle = "#e94560";
-      ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
-      ctx.fillStyle = "rgba(0,0,0,0.2)";
-      for(let y = obs.y; y < obs.y + obs.height; y+= 10) {
-        ctx.fillRect(obs.x, y, obs.width, 2);
-      }
+      ctx.fillStyle = "#00ffff";
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = "rgba(0, 255, 255, 0.3)";
+      ctx.beginPath();
+      ctx.roundRect(obs.x, obs.y, obs.width, obs.height, 4);
+      ctx.fill();
+      ctx.shadowBlur = 0;
     });
 
     if (state.active) {
@@ -321,7 +344,7 @@ export function GameCanvas({ isPlaying, onGameOver, onScoreUpdate, isMuted }: Ga
       ref={canvasRef} 
       width={800} 
       height={400}
-      className="w-full h-full object-contain rounded-md border-4 border-border shadow-2xl bg-black pixel-corners"
+      className="w-full h-full object-contain rounded-[2rem] bg-black shadow-inner"
     />
   );
 }

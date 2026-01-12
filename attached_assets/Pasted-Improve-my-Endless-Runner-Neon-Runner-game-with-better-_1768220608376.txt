@@ -1,0 +1,162 @@
+Improve my Endless Runner (Neon Runner) game with better UI, and MOST IMPORTANTLY: audio (background music + cute sound effects).
+
+🚨🚨🚨 TOP PRIORITY: AUDIO MUST FEEL COMFORTABLE + CUTE 🚨🚨🚨
+- The audio is the main feature I want improved.
+- Background music should be calm, cozy, and low volume.
+- Sound effects should be cute and soft (no harsh or loud SFX).
+- Add a clear audio UI (mute toggle + volume sliders if possible).
+
+====================
+1) UI / LAYOUT FIXES (High score hiding + Start button not clickable)
+====================
+Problems:
+- High score UI overlaps / hides content.
+- Start Game button becomes unclickable sometimes due to overlay layers.
+
+Fix:
+- Redesign start screen and game over screen:
+  - Put HIGH SCORES inside its own separate card/panel that does NOT cover the button.
+  - Add spacing/padding and max-height with scroll if needed (overflow-y:auto).
+  - Ensure Start Game and Restart are ALWAYS clickable on desktop and mobile.
+  - Fix layering:
+    - Background / decorative overlays MUST have `pointer-events: none`
+    - Interactive UI (buttons) MUST be on top with higher z-index
+- Make it look more comfortable:
+  - More whitespace
+  - Softer glow
+  - Rounded panels
+  - Clear hierarchy: Title → Best Score → Buttons → High Scores
+- Fully responsive mobile layout.
+
+====================
+2) ⭐⭐⭐ AUDIO: COMFORT BACKGROUND MUSIC + CUTE SOUND EFFECTS ⭐⭐⭐
+====================
+
+------------------------------------
+A) BACKGROUND MUSIC (BGM) — BIG FOCUS
+------------------------------------
+Requirements:
+- Add looping background music with a cozy vibe:
+  - chill / soft synth / lo-fi arcade / warm ambient
+  - NOT intense, NOT fast, NOT aggressive
+- Volume should be LOW and comfortable:
+  - default BGM volume: 0.20 to 0.30
+- Audio must follow game states:
+  - Start Game click/tap → unlock audio + start BGM
+  - While PLAYING → BGM continues
+  - Game Over → BGM stops or fades out smoothly
+  - Restart → BGM restarts (or resumes)
+- Must handle browser autoplay rules:
+  - BGM must NOT attempt to play until user clicks/taps Start Game.
+- Add smooth fade in/out:
+  - Fade in over ~800ms when game starts
+  - Fade out over ~600ms on Game Over
+
+------------------------------------
+B) SOUND EFFECTS (SFX) — CUTE + SOFT
+------------------------------------
+Add these SFX (cute and gentle):
+- Button click: soft “tick”
+- Jump: soft “boop”
+- Double jump: slightly higher pitch “boop”
+- Collectible pickup: cute sparkle/chime
+- Power-up pickup: soft “whoosh”
+- Game over: gentle “oops” / low pop (NOT harsh)
+
+SFX rules:
+- Default SFX volume: 0.35 to 0.55 (still not loud)
+- No distortion or sharp high frequencies
+- If multiple SFX trigger quickly, prevent clipping (limit overlapping / throttle)
+
+------------------------------------
+C) AUDIO CONTROLS UI (VERY IMPORTANT)
+------------------------------------
+- Add a visible mute/unmute button (top right).
+- Mute must control BOTH BGM and SFX.
+- (Optional but preferred) Add small sliders:
+  - Music volume slider
+  - SFX volume slider
+- Save audio settings to localStorage:
+  - mute state
+  - music volume
+  - sfx volume
+
+Assets:
+- If audio files do not exist:
+  - add small placeholder files in public/assets/audio
+  - OR pick free assets and add them to the repo
+- Ensure paths work with Vite/React build.
+
+====================
+3) CORE MOVEMENT & DIFFICULTY
+====================
+Core:
+- Auto-run always on.
+- Player controls actions only (jump / double jump etc.)
+
+Difficulty:
+- Speed increases gradually (no sudden jumps)
+- Cap max speed so it’s always playable
+- Keep early game easy and slow
+
+Procedural generation:
+- Use reusable chunks
+- Avoid impossible obstacle combos
+- Early spacing generous
+
+====================
+4) ACTIONS & OBSTACLES
+====================
+Player actions:
+- Jump
+- Double jump
+- Duck/slide (only if already implemented)
+- Side shift (only if already implemented)
+
+Obstacles:
+- Mostly static, readable
+- Some slow moving obstacles later
+- Collision = Game Over (unless shield active)
+
+====================
+5) REWARDS & POWER-UPS
+====================
+Collectibles:
+- Coins/gems
+- Clear visual feedback + SFX
+
+Power-ups:
+- Magnet: pulls collectibles
+- Shield: blocks ONE hit
+- Multiplier: score boost temporarily
+Rules:
+- Rare
+- Clearly visible
+- One active at a time
+
+====================
+6) PROGRESSION & FEEDBACK
+====================
+Scoring:
+- Distance survived = main score
+- Collectibles = bonus
+- Show current score clearly during gameplay
+- Show BEST score on start & game over
+
+Game Over screen:
+- Final score, best score, restart button
+- Calm animation (fade/scale)
+
+====================
+7) FINAL DELIVERABLE
+====================
+After changes:
+- List files modified
+- List constants:
+  - base speed / speed ramp / max speed
+  - BGM volume, SFX volume
+- Confirm:
+  - High score never hides buttons
+  - Start Game always clickable
+  - Audio starts only after Start click/tap
+  - BGM + SFX sound comfortable and cute
