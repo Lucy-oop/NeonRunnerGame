@@ -1,0 +1,53 @@
+Update my Neon Runner (React + Canvas) game difficulty + audio.
+
+GOAL 1 — Speed schedule (discrete steps):
+- The game has a variable "speedRate" (or equivalent movement speed multiplier).
+- At the moment the run starts, set speedRate = 0.5
+- After 10 seconds of play time, speedRate = 1.0
+- After 20 seconds, speedRate = 1.5
+- After 30 seconds, speedRate = 2.0
+- After 40 seconds, speedRate = 2.5
+- After 50 seconds, speedRate = 3.0
+- After 60 seconds, speedRate = 3.5
+- After 70 seconds, speedRate = 4.0
+- After 80 seconds, speedRate = 4.5
+- After 90 seconds and beyond, speedRate = 5.0 (MAX CAP, never exceed 5)
+
+Implementation details:
+- Track elapsed play time in seconds (only while game is in PLAYING state; pause/reset should not keep increasing time).
+- Compute step index: step = floor(elapsedSeconds / 10)
+- speedRate = min(0.5 + 0.5 * step, 5)
+- Apply speedRate to obstacle movement and background scrolling.
+- Also optionally apply a mild ramp to obstacle spawn rate so early game is easy:
+  - Start spawn interval around 1400–1600ms
+  - Every 10 seconds reduce interval by ~80–120ms
+  - Minimum spawn interval cap around 600–700ms
+
+GOAL 2 — Sound effects + background music:
+Add simple audio using Web Audio or HTMLAudio (no external libraries needed).
+
+Sound effects (SFX):
+- Jump sound (on jump)
+- Double jump sound (on double jump) OR same jump sound is OK
+- Hit/death sound (on collision / game over)
+- UI click sound (Start Game and Restart)
+
+Background music (BGM):
+- Looping background music during gameplay
+- Volume low (e.g., 0.2–0.35)
+- Provide a mute/unmute toggle button (top right) that controls both SFX and BGM.
+- Autoplay restrictions: on first user interaction (Start Game click/tap), unlock audio and start BGM.
+
+Assets:
+- If project already has audio files, use them.
+- If not, add small placeholder audio files or use free assets and place them in the public/static assets folder.
+- Make sure paths work with Vite/React build.
+
+Deliverables:
+- Tell me exactly which files you changed (e.g., client/src/Game.ts, App.tsx, styles).
+- Show the variables/constants for:
+  - speedRate schedule
+  - spawn interval schedule
+  - max caps
+  - audio volume levels
+- Confirm Start Game remains clickable and audio starts only after user interaction.

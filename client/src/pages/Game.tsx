@@ -81,6 +81,7 @@ export default function Game() {
           isPlaying={gameState === "playing"} 
           onGameOver={handleGameOver}
           onScoreUpdate={setScore}
+          isMuted={isMuted}
         />
 
         {/* Start Screen Overlay */}
