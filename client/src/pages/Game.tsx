@@ -104,12 +104,14 @@ export default function Game() {
                 </p>
               </div>
 
-              <PixelButton size="lg" onClick={handleStart} className="animate-pulse">
-                <Play className="inline-block mr-2 w-4 h-4" />
-                START GAME
-              </PixelButton>
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 flex flex-col items-center gap-8 w-full max-w-xs">
+                <PixelButton size="lg" onClick={handleStart} className="animate-pulse w-full">
+                  <Play className="inline-block mr-2 w-4 h-4" />
+                  START GAME
+                </PixelButton>
+              </div>
 
-              <div className="absolute bottom-8 left-8 right-8">
+              <div className="absolute bottom-4 left-4 right-4 z-20">
                 <Leaderboard />
               </div>
             </motion.div>

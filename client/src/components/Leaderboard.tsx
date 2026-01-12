@@ -16,12 +16,12 @@ export function Leaderboard() {
   const topScores = scores.slice(0, 5);
 
   return (
-    <div className="bg-muted/50 p-6 rounded-none border-2 border-border relative">
-      <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-background px-4 font-pixel text-primary text-xs border border-border">
+    <div className="bg-muted/80 backdrop-blur-md p-3 md:p-6 rounded-none border-2 border-border relative max-h-[30vh] overflow-y-auto">
+      <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-background px-4 font-pixel text-primary text-[10px] md:text-xs border border-border whitespace-nowrap z-10">
         HIGH SCORES
       </div>
       
-      <div className="space-y-4 mt-2">
+      <div className="space-y-2 md:space-y-4 mt-2">
         {topScores.map((score, index) => (
           <div key={score.id} className="flex items-center justify-between font-mono text-sm border-b border-white/5 pb-2 last:border-0 last:pb-0">
             <div className="flex items-center gap-3">

@@ -14,8 +14,12 @@ export function GameCanvas({ isPlaying, onGameOver, onScoreUpdate }: GameCanvasP
   // Game constants
   const GRAVITY = 0.6;
   const JUMP_FORCE = -12;
-  const SPEED = 5;
-  const OBSTACLE_SPAWN_RATE = 120; // Frames
+  const BASE_SPEED = 4;
+  const MAX_SPEED = 12;
+  const RAMP_RATE = 0.05; // speed increase per second
+  const STARTING_SPAWN_RATE = 150; // frames
+  const MIN_SPAWN_RATE = 60; // frames
+  const SPAWN_RAMP_RATE = 0.5; // reduction in interval per second
 
   // Game state refs (to avoid closure staleness in loop)
   const gameState = useRef({
@@ -30,8 +34,11 @@ export function GameCanvas({ isPlaying, onGameOver, onScoreUpdate }: GameCanvasP
     },
     obstacles: [] as { x: number; y: number; width: number; height: number; passed: boolean }[],
     frameCount: 0,
+    startTime: 0,
     active: false,
     groundY: 0,
+    currentSpeed: BASE_SPEED,
+    currentSpawnRate: STARTING_SPAWN_RATE,
   });
 
   // Jump handler
@@ -97,8 +104,11 @@ export function GameCanvas({ isPlaying, onGameOver, onScoreUpdate }: GameCanvasP
         },
         obstacles: [],
         frameCount: 0,
+        startTime: Date.now(),
         active: true,
-        groundY: canvas.height - 50
+        groundY: canvas.height - 50,
+        currentSpeed: BASE_SPEED,
+        currentSpawnRate: STARTING_SPAWN_RATE,
       };
 
       // Start loop
@@ -121,6 +131,11 @@ export function GameCanvas({ isPlaying, onGameOver, onScoreUpdate }: GameCanvasP
     if (!ctx) return;
 
     const state = gameState.current;
+    const elapsedSeconds = (Date.now() - state.startTime) / 1000;
+
+    // Difficulty Ramping
+    state.currentSpeed = Math.min(MAX_SPEED, BASE_SPEED + RAMP_RATE * elapsedSeconds);
+    state.currentSpawnRate = Math.max(MIN_SPAWN_RATE, STARTING_SPAWN_RATE - SPAWN_RAMP_RATE * elapsedSeconds);
 
     // --- UPDATE ---
     
@@ -138,7 +153,8 @@ export function GameCanvas({ isPlaying, onGameOver, onScoreUpdate }: GameCanvasP
 
     // Spawn Obstacles
     state.frameCount++;
-    if (state.frameCount % OBSTACLE_SPAWN_RATE === 0) {
+    if (state.frameCount >= state.currentSpawnRate) {
+      state.frameCount = 0; // Reset frame count for next spawn interval
       const minHeight = 40;
       const maxHeight = 120;
       const height = Math.floor(Math.random() * (maxHeight - minHeight + 1) + minHeight);
@@ -155,7 +171,7 @@ export function GameCanvas({ isPlaying, onGameOver, onScoreUpdate }: GameCanvasP
     // Update Obstacles
     for (let i = state.obstacles.length - 1; i >= 0; i--) {
       const obs = state.obstacles[i];
-      obs.x -= SPEED;
+      obs.x -= state.currentSpeed;
 
       // Collision Detection
       if (
@@ -198,10 +214,11 @@ export function GameCanvas({ isPlaying, onGameOver, onScoreUpdate }: GameCanvasP
     // Grid lines (Retro feel)
     ctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
     ctx.lineWidth = 1;
-    for (let x = 0; x < canvas.width; x += 40) {
+    const gridOffset = (elapsedSeconds * state.currentSpeed * 10) % 40;
+    for (let x = 0; x < canvas.width + 40; x += 40) {
       ctx.beginPath();
-      ctx.moveTo(x - (state.frameCount % 40), 0);
-      ctx.lineTo(x - (state.frameCount % 40), canvas.height);
+      ctx.moveTo(x - gridOffset, 0);
+      ctx.lineTo(x - gridOffset, canvas.height);
       ctx.stroke();
     }
 
