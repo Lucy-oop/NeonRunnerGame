@@ -12,6 +12,10 @@ export default function Game() {
   const [score, setScore] = useState(0);
   const [playerName, setPlayerName] = useState("");
   const [isMuted, setIsMuted] = useState(false);
+  const [bestScore, setBestScore] = useState(() => {
+    const saved = localStorage.getItem("neon_runner_best_score");
+    return saved ? parseInt(saved, 10) : 0;
+  });
   
   const submitScore = useSubmitScore();
 
@@ -22,6 +26,10 @@ export default function Game() {
 
   const handleGameOver = (finalScore: number) => {
     setScore(finalScore);
+    if (finalScore > bestScore) {
+      setBestScore(finalScore);
+      localStorage.setItem("neon_runner_best_score", finalScore.toString());
+    }
     setGameState("gameover");
   };
 
@@ -86,8 +94,11 @@ export default function Game() {
             >
               <div className="text-center space-y-4">
                 <h2 className="text-4xl md:text-6xl text-primary font-pixel animate-bounce">
-                  PRESS START
+                  NEON RUNNER
                 </h2>
+                <div className="text-xl font-mono text-accent">
+                  BEST: {bestScore.toString().padStart(5, '0')}
+                </div>
                 <p className="font-mono text-muted-foreground">
                   SPACE to JUMP • Double tap for DOUBLE JUMP
                 </p>
@@ -115,8 +126,13 @@ export default function Game() {
               className="absolute inset-0 bg-background/95 backdrop-blur-md flex flex-col items-center justify-center z-30 p-8"
             >
               <h2 className="text-5xl font-pixel text-destructive mb-2">GAME OVER</h2>
-              <div className="text-2xl font-mono mb-8 text-foreground">
-                SCORE: <span className="text-accent">{score.toString().padStart(5, '0')}</span>
+              <div className="flex flex-col items-center gap-2 mb-8">
+                <div className="text-2xl font-mono text-foreground">
+                  SCORE: <span className="text-accent">{score.toString().padStart(5, '0')}</span>
+                </div>
+                <div className="text-lg font-mono text-muted-foreground">
+                  BEST: {bestScore.toString().padStart(5, '0')}
+                </div>
               </div>
 
               {/* Score Submission Form */}
